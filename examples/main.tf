@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     cmdb = {
-      version = "0.1"
-      source = "zalopay.vn/top/cmdb"
+      version = "0.2"
+      source = "zalopay.com.vn/top/cmdb"
     }
   }
 }

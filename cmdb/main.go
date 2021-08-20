@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/whatvn/denny"
 	"github.com/whatvn/denny/middleware/http"
-	"terraform-provider-example/cmdb/controller"
+	"terraform-provider-cmdb/cmdb/controller"
 )
 
 var (
