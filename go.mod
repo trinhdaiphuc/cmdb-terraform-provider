@@ -7,9 +7,9 @@ require (
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.8.2 // indirect
-	github.com/hashicorp/terraform-plugin-docs v0.4.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.7.0
 	github.com/json-iterator/go v1.1.11 // indirect
+	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/phuc1998/http-builder v0.0.0-20210416100107-7e621da9b2a0
