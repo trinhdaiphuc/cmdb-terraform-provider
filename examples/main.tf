@@ -2,7 +2,7 @@ terraform {
   required_providers {
     cmdb = {
       version = "0.2"
-      source = "zalopay.com.vn/top/cmdb"
+      source = "goreleaser release --rm-distzalopay.com.vn/top/cmdb"
     }
   }
 }
@@ -11,7 +11,7 @@ provider "cmdb" {
   api_version = "v1"
   hostname = "localhost"
   protocol = "http"
-  port = 8080
+  port = "8080"
 }
 
 resource "cmdb" "new" {
@@ -24,7 +24,6 @@ resource "cmdb" "new" {
 output "new_config" {
   value = cmdb.new
 }
-
 
 data "cmdb" "db_host" {
   id = "db.host"
