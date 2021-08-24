@@ -2,9 +2,10 @@
 
 ## Table of content
 
-1. [Performance test's infrastructure](#performance-tests-infrastructure)
-2. [Performance test's infrastructure](#performance-tests-infrastructure)
-3. [Performance test's technical](#performance-tests-technical)
+1. [Introduction](#introduction)
+2. [What Providers Do](#what-providers-do)
+3. [Where Providers Come From](#where-providers-come-from)
+4. [How to Use Providers](#how-to-use-providers)
 
 ## Introduction
 
@@ -41,9 +42,15 @@ major infrastructure platforms.
 To use resources from a given provider, you need to include some information about it in your configuration. See the
 following pages for details:
 
-Provider Requirements documents how to declare providers so Terraform can install them.
+[Provider Requirements](#provider-requirements) documents how to declare providers so Terraform can install them.
 
-Provider Configuration documents how to configure settings for providers.
+[Provider Configuration](#provider-configuration) documents how to configure settings for providers.
 
-Dependency Lock File documents an additional HCL file that can be included with a configuration, which tells Terraform
+[Dependency Lock File](#dependency-lock-file) documents an additional HCL file that can be included with a configuration, which tells Terraform
 to always use a specific set of provider versions.
+
+### Provider Requirements
+
+### Provider Configuration
+
+### Dependency Lock File
