@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     cmdb = {
-      version = "0.2"
+      version = "0.3"
       source = "goreleaser release --rm-distzalopay.com.vn/top/cmdb"
     }
   }
