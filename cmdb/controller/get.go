@@ -1,20 +1,16 @@
 package controller
 
-import "github.com/whatvn/denny"
+import (
+	"github.com/whatvn/denny"
+	"terraform-provider-cmdb/cmdb/model"
+)
 
-func getAllocatedName(name string) *AllocatedName {
-	if v, ok := names[name]; ok {
-		return v
-	}
-	return nil
-}
-
-func GetName(ctx *denny.Context) {
+func GetConfig(ctx *denny.Context) {
 	name, ok := ctx.GetQuery("name")
 	if !ok {
 		ctx.Status(400)
 		return
 	}
-	getName := getAllocatedName(name)
-	ctx.JSON(200, getName)
+	config := model.GetAllocatedConfig(name)
+	ctx.JSON(200, config)
 }

@@ -17,9 +17,7 @@ type provider struct {
 // Provider schema struct
 type providerData struct {
 	ApiVersion types.String `tfsdk:"api_version"`
-	Hostname   types.String `tfsdk:"hostname"`
-	Protocol   types.String `tfsdk:"protocol"`
-	Port       types.String `tfsdk:"port"`
+	Host       types.String `tfsdk:"host"`
 }
 
 var stderr = os.Stderr
@@ -37,17 +35,7 @@ func (p *provider) GetSchema(_ context.Context) (schema.Schema, []*tfprotov6.Dia
 				Optional: true,
 				Computed: true,
 			},
-			"hostname": {
-				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
-			},
-			"protocol": {
-				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
-			},
-			"port": {
+			"host": {
 				Type:     types.StringType,
 				Optional: true,
 				Computed: true,
@@ -58,20 +46,21 @@ func (p *provider) GetSchema(_ context.Context) (schema.Schema, []*tfprotov6.Dia
 
 func (p *provider) GetResources(ctx context.Context) (map[string]tfsdk.ResourceType, []*tfprotov6.Diagnostic) {
 	return map[string]tfsdk.ResourceType{
-		"hashicups_order": resourceConfigType{},
+		"cmdb_config": resourceConfigType{},
 	}, nil
 }
 
 func (p *provider) GetDataSources(ctx context.Context) (map[string]tfsdk.DataSourceType, []*tfprotov6.Diagnostic) {
 	return map[string]tfsdk.DataSourceType{
+		"cmdb_config": dataSourceHistoriesType{},
 	}, nil
 }
 
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
 	// Retrieve provider data from configuration
 	var (
-		config                               providerData
-		hostname, apiVersion, protocol, port string
+		config           providerData
+		host, apiVersion string
 	)
 	err := req.Config.Get(ctx, &config)
 	if err != nil {
@@ -109,86 +98,33 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		})
 	}
 
-	// User must provide a hostname to the provider
-	if config.Hostname.Unknown {
+	// User must provide a host to the provider
+	if config.Host.Unknown {
 		// Cannot connect to client with an unknown value
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
 			Severity: tfprotov6.DiagnosticSeverityWarning,
 			Summary:  "Unable to create client",
-			Detail:   "Cannot use unknown value as hostname",
+			Detail:   "Cannot use unknown value as host",
 		})
 		return
 	}
 
-	if config.Hostname.Null {
-		hostname = os.Getenv("CMDB_HOSTNAME")
+	if config.Host.Null {
+		host = os.Getenv("CMDB_HOST")
 	} else {
-		hostname = config.Hostname.Value
+		host = config.Host.Value
 	}
 
-	if hostname == "" {
+	if host == "" {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
 			// Error vs warning - empty value must stop execution
 			Severity: tfprotov6.DiagnosticSeverityError,
-			Summary:  "Unable to find hostname",
-			Detail:   "Hostname cannot be an empty string",
+			Summary:  "Unable to find host",
+			Detail:   "Host cannot be an empty string",
 		})
 	}
 
-	// User must provide a protocol to the provider
-	if config.Protocol.Unknown {
-		// Cannot connect to client with an unknown value
-		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
-			Severity: tfprotov6.DiagnosticSeverityWarning,
-			Summary:  "Unable to create client",
-			Detail:   "Cannot use unknown value as protocol",
-		})
-		return
-	}
-
-	if config.Protocol.Null {
-		apiVersion = os.Getenv("CMDB_PROTOCOL")
-	} else {
-		apiVersion = config.Protocol.Value
-	}
-
-	if protocol == "" {
-		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
-			// Error vs warning - empty value must stop execution
-			Severity: tfprotov6.DiagnosticSeverityError,
-			Summary:  "Unable to find protocol",
-			Detail:   "Protocol cannot be an empty string",
-		})
-	}
-
-	// User must provide a port to the provider
-	if config.Port.Unknown {
-		// Cannot connect to client with an unknown value
-		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
-			Severity: tfprotov6.DiagnosticSeverityWarning,
-			Summary:  "Unable to create client",
-			Detail:   "Cannot use unknown value as port",
-		})
-		return
-	}
-
-	if config.Port.Null {
-		hostname = os.Getenv("CMDB_PORT")
-	} else {
-		hostname = config.Port.Value
-	}
-
-	if port == "" {
-		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
-			// Error vs warning - empty value must stop execution
-			Severity: tfprotov6.DiagnosticSeverityError,
-			Summary:  "Unable to find port",
-			Detail:   "Port cannot be an empty string",
-		})
-	}
-
-	cli := NewClient(port, protocol, hostname, apiVersion)
+	cli := NewClient(host, apiVersion)
 	p.client = cli
 	p.configured = true
 }
-

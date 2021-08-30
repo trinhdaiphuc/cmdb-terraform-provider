@@ -14,10 +14,11 @@ var (
 func setupHTTPHandler(server *denny.Denny) {
 	//Register http handler
 	apiController := server.Group("/api/" + apiVersion)
-	apiController.POST("/names", controller.CreateName)
-	apiController.GET("/names", controller.GetName)
-	apiController.PUT("/names", controller.UpdateName)
-	apiController.DELETE("/names", controller.DeleteName)
+	apiController.POST("/configs", controller.CreateConfig)
+	apiController.GET("/configs", controller.GetConfig)
+	apiController.PUT("/configs", controller.UpdateConfig)
+	apiController.DELETE("/configs", controller.DeleteConfig)
+	apiController.GET("/histories", controller.GetHistory)
 }
 
 func main() {

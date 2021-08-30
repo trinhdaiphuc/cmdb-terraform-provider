@@ -1,8 +1,11 @@
 package controller
 
-import "github.com/whatvn/denny"
+import (
+	"github.com/whatvn/denny"
+	"terraform-provider-cmdb/cmdb/model"
+)
 
-func UpdateName(ctx *denny.Context) {
+func UpdateConfig(ctx *denny.Context) {
 	name, ok := ctx.GetPostForm("name")
 	if !ok {
 		ctx.Status(400)
@@ -13,6 +16,6 @@ func UpdateName(ctx *denny.Context) {
 		ctx.Status(400)
 		return
 	}
-	newName := putAllocatedName(name, value)
-	ctx.JSON(200, newName)
+	config := model.PutAllocatedConfig(name, value)
+	ctx.JSON(200, config)
 }

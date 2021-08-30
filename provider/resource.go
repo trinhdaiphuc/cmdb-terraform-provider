@@ -82,7 +82,7 @@ func (r resourceConfig) Create(ctx context.Context, req tfsdk.CreateResourceRequ
 		return
 	}
 
-	// Create new config
+	// Create new configs
 	config, err := r.p.client.CreateConfig(plan.Config)
 	if err != nil {
 		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
@@ -92,6 +92,8 @@ func (r resourceConfig) Create(ctx context.Context, req tfsdk.CreateResourceRequ
 		})
 		return
 	}
+
+	// Map response body to resource schema attribute
 
 	// Generate resource state struct
 	var result = ConfigResource{

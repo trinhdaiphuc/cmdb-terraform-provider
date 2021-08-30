@@ -11,9 +11,9 @@ type Client struct {
 }
 
 // NewClient initializes a new Client instance to communicate with the CMDB api
-func NewClient(port, protocol, hostname, version string) *Client {
+func NewClient(host, version string) *Client {
 	httpCfg := builder.NewConfiguration()
-	httpCfg.BasePath = fmt.Sprintf("%s://%s:%s/api/%s", protocol, hostname, port, version)
+	httpCfg.BasePath = fmt.Sprintf("%s/api/%s", host, version)
 	httpClient := builder.NewAPIClient(httpCfg)
 
 	return &Client{httpClient}
@@ -27,7 +27,7 @@ func (c *Client) CreateConfig(config Config) (Config, error) {
 		}
 		resp = Config{}
 	)
-	_, err := c.Builder("/names").
+	_, err := c.Builder("/configs").
 		Post().
 		BuildForm(req).
 		UseMultipartFormData().
@@ -39,7 +39,7 @@ func (c *Client) GetConfig(name string) (Config, error) {
 	var (
 		resp = Config{}
 	)
-	_, err := c.Builder("/names").
+	_, err := c.Builder("/configs").
 		Get().
 		SetQuery("name", name).
 		Call(context.Background(), &resp)
@@ -54,7 +54,7 @@ func (c *Client) UpdateConfig(config Config) (Config, error) {
 		}
 		resp = Config{}
 	)
-	_, err := c.Builder("/names").
+	_, err := c.Builder("/configs").
 		Put().
 		BuildForm(req).
 		UseXFormURLEncoded().
@@ -66,9 +66,20 @@ func (c *Client) DeleteConfig(name string) error {
 	var (
 		resp interface{}
 	)
-	_, err := c.Builder("/names").
+	_, err := c.Builder("/configs").
 		Delete().
 		SetQuery("name", name).
 		Call(context.Background(), &resp)
 	return err
+}
+
+func (c *Client) GetHistory(name string) (History, error) {
+	var (
+		resp = History{}
+	)
+	_, err := c.Builder("/histories").
+		Get().
+		SetQuery("name", name).
+		Call(context.Background(), &resp)
+	return resp, err
 }
