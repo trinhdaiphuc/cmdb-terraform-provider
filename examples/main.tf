@@ -2,7 +2,7 @@ terraform {
   required_providers {
     cmdb = {
       version = "0.4"
-      source = "zalopay.com.vn/top/cmdb"
+      source = "trinhdaiphuc/cmdb"
     }
   }
 }
