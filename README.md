@@ -183,3 +183,18 @@ The body of the block (between `{` and `}`) contains configuration arguments for
 section are defined by the provider itself; in this example both project and region are specific to the google provider.
 
 ### Dependency Lock File
+
+A Terraform configuration may refer to two different kinds of external dependency that come from outside of its own
+codebase:
+
+- Providers, which are plugins for Terraform that extend it with support for interacting with various external systems.
+
+- Modules, which allow splitting out groups of Terraform configuration constructs (written in the Terraform language)
+  into reusable abstractions.
+
+Both of these dependency types can be published and updated independently from Terraform itself and from the
+configurations that depend on them. For that reason, Terraform must determine which versions of those dependencies are
+potentially compatible with the current configuration and which versions are currently selected for use.
+
+## Terraform Plugin Framework
+
