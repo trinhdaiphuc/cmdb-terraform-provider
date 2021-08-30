@@ -196,5 +196,6 @@ Both of these dependency types can be published and updated independently from T
 configurations that depend on them. For that reason, Terraform must determine which versions of those dependencies are
 potentially compatible with the current configuration and which versions are currently selected for use.
 
-## Terraform Plugin Framework
+## Terraform Plugin SDK
+
 
