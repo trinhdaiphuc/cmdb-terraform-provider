@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/trinhdaiphuc/terraform-provider-cmdb/cmdb/controller"
 	"github.com/whatvn/denny"
 	"github.com/whatvn/denny/middleware/http"
-	"terraform-provider-cmdb/cmdb/controller"
 )
 
 var (

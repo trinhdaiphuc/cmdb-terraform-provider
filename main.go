@@ -1,13 +1,15 @@
 package main
 
 import (
-	"context"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"terraform-provider-cmdb/provider"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/trinhdaiphuc/terraform-provider-cmdb/provider"
 )
 
 func main() {
-	tfsdk.Serve(context.Background(), provider.New, tfsdk.ServeOpts{
-		Name: "cmdb",
+	plugin.Serve(&plugin.ServeOpts{
+		ProviderFunc: func() *schema.Provider {
+			return provider.Provider()
+		},
 	})
 }

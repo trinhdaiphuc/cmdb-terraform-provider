@@ -24,7 +24,7 @@ output "new_config" {
 }
 
 data "cmdb_config" "history" {
-  id = "db.host"
+  name = "db.host"
 }
 
 output "db_host" {

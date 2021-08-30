@@ -2,93 +2,77 @@ package provider
 
 import (
 	"context"
-	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/schema"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-type dataSourceHistoriesType struct{}
-
-func (r dataSourceHistoriesType) GetSchema(_ context.Context) (schema.Schema, []*tfprotov6.Diagnostic) {
-	return schema.Schema{
-		Attributes: map[string]schema.Attribute{
-			"history": {
-				// When Computed is true, the provider will set value --
-				// the user cannot define the value
+func dataSourceHistory() *schema.Resource {
+	return &schema.Resource{
+		ReadContext: dataSourceHistoryRead,
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"configVersions": {
+				Type:     schema.TypeList,
 				Computed: true,
-				Attributes: schema.SingleNestedAttributes(map[string]schema.Attribute{
-					"name": {
-						Type:     types.StringType,
-						Required: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"value": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"createdAt": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"updatedAt": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
-					"configVersions": {
-						Attributes: schema.ListNestedAttributes(map[string]schema.Attribute{
-							"name": {
-								Type:     types.StringType,
-								Computed: true,
-							},
-							"value": {
-								Type:     types.StringType,
-								Computed: true,
-							},
-							"createdAt": {
-								Type:     types.StringType,
-								Computed: true,
-							},
-							"updatedAt": {
-								Type:     types.StringType,
-								Computed: true,
-							},
-						}, schema.ListNestedAttributesOptions{}),
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
-func (r dataSourceHistoriesType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, []*tfprotov6.Diagnostic) {
-	return dataSourceHistories{
-		p: *(p.(*provider)),
-	}, nil
-}
+func dataSourceHistoryRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	cli := m.(*Client)
 
-type dataSourceHistories struct {
-	p provider
-}
+	// // Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
-func (r dataSourceHistories) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
-	// Declare struct that this function will set to this data source's state
-	var his History
-
-	err := req.Config.Get(ctx, &his)
-
-	histories, err := r.p.client.GetHistory(his.Name)
+	his := d.Get("name").(string)
+	resp, err := cli.GetHistory(his)
 	if err != nil {
-		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
-			Severity: tfprotov6.DiagnosticSeverityError,
-			Summary:  "Error retrieving histories",
-		})
-		return
+		diag.FromErr(err)
 	}
 
-	// Sample debug message
-	// To view this message, set the TF_LOG environment variable to DEBUG
-	// 		`export TF_LOG=DEBUG`
-	// To hide debug message, unset the environment variable
-	// 		`unset TF_LOG`
-	fmt.Fprintf(stderr, "[DEBUG]-Resource State:%+v", histories)
+	histories := make([]map[string]interface{}, 0)
 
-	// Set state
-	err = resp.State.Set(ctx, &histories)
-	if err != nil {
-		resp.Diagnostics = append(resp.Diagnostics, &tfprotov6.Diagnostic{
-			Severity: tfprotov6.DiagnosticSeverityError,
-			Summary:  "Error reading histories",
-			Detail:   fmt.Sprintf("An unexpected error was encountered while reading the datasource_history: %+v", err.Error()),
-		})
-		return
+	for _, v := range resp.VersionConfigs {
+		config := make(map[string]interface{})
+
+		config["name"] = v.Name
+		config["value"] = v.Value
+		config["createdAt"] = v.CreatedAt
+		config["updatedAt"] = v.UpdateAt
+
+		histories = append(histories, config)
 	}
+
+	if err := d.Set("history", histories); err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(his)
+
+	return diags
 }

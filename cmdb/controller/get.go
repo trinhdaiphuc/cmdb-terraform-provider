@@ -1,8 +1,8 @@
 package controller
 
 import (
+	"github.com/trinhdaiphuc/terraform-provider-cmdb/cmdb/model"
 	"github.com/whatvn/denny"
-	"terraform-provider-cmdb/cmdb/model"
 )
 
 func GetConfig(ctx *denny.Context) {
