@@ -196,6 +196,246 @@ Both of these dependency types can be published and updated independently from T
 configurations that depend on them. For that reason, Terraform must determine which versions of those dependencies are
 potentially compatible with the current configuration and which versions are currently selected for use.
 
-## Terraform Plugin SDK
+## Terraform Custom Provider
+
+Interact with APIs using Terraform providers. Use a provider as a bridge between Terraform and a target API. Then,
+extend Terraform by developing a custom Terraform provider.
+
+Later in the track, you will re-create the Cmdb provider based on
+the [Terraform Plugin SDK v2](https://github.com/hashicorp/terraform-plugin-sdk).
+
+### Terraform plugins
+
+Terraform is comprised of Terraform Core and Terraform Plugins.
+
+![image](./images/core-plugins-api.png)
+
+- Terraform Core reads the configuration and builds the resource dependency graph.
+- Terraform Plugins (providers and provisioners) bridge Terraform Core and their respective target APIs. Terraform
+  provider plugins implement resources via basic CRUD (create, read, update, and delete) APIs to communicate with third
+  party services.
+
+Upon `terraform plan` or `terraform apply`, Terraform Core asks the Terraform provider to perform an action via a RPC
+interface. The provider attempts to fulfill the request by invoking a CRUD operation against the target API's client
+library. This process enforces a clear separation of concerns. Providers are able to serve as an abstraction of a client
+library.
+
+### Setup and Implement Read
+
+#### Prerequisites
+
+- A Golang 1.15+ installed and configured.
+- The Terraform 0.14+ CLI installed locally.
+- Docker and Docker Compose to run an instance of Cmdb locally.
+
+#### Set up your development environment
+
+- Run docker-compose up to spin up a local instance of Cmdb on port :8080.
+
+```shell
+docker-compose up
+```
+
+- Verify that Cmdb is running by sending a request to its health check endpoint.
+
+```shell
+curl localhost:8080/health
+```
+
+##### Explore main.go file
+
+Open `main.go` in the root of the repository. The contents of the main function consume the Plugin SDK's plugin library
+which facilitates the RPC communication between Terraform Core and the plugin.
+
+```go
+package main
+
+import (
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/trinhdaiphuc/terraform-provider-cmdb/provider"
+)
+
+func main() {
+	plugin.Serve(&plugin.ServeOpts{
+		ProviderFunc: func() *schema.Provider {
+			return provider.Provider()
+		},
+	})
+}
+```
+
+_Notice the ProviderFunc returns a *provider.Provider from the terraform-provider-cmdb/provider package._
+
+##### Explore provider schema
+
+The provider/provider.go file currently defines an cmdb provider.
+
+```go
+package provider
+
+import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+func Provider() *schema.Provider {
+	return &schema.Provider{
+		ConfigureContextFunc: providerConfigure,
+		Schema: map[string]*schema.Schema{
+			"api_version": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("CMDB_API_VERSION", "v1"),
+			},
+			"host": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("CMDB_HOST", "http://localhost:8080"),
+			},
+		},
+		ResourcesMap: map[string]*schema.Resource{
+			"cmdb_config": resourceConfig(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"cmdb_config": dataSourceHistory(),
+		},
+	}
+}
+
+// providerConfigure parses the config into the Terraform provider meta object
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	var (
+		diags      diag.Diagnostics
+		apiVersion = d.Get("api_version").(string)
+		host       = d.Get("host").(string)
+	)
+	cli := NewClient(host, apiVersion)
+	return cli, diags
+}
+```
+
+The helper/schema library is part of Terraform Core. It abstracts many of the complexities and ensures consistency
+between providers. The *schema.Provider type can accept:
+
+- The resources it supports (ResourcesMap and DataSourcesMap)
+- Configuration keys (properties in *schema.Schema{})
+- Any callbacks to configure (ConfigureContextFunc). This function retrieves the `api_version` and `host` from the
+  provider schema to connect to create a client connect to cmdb and configure your provider.
+
+#### Implement Create
+
+- Define `config` resource
+
+To create a Cmdb config, you would send a POST request to the /api/v1/configs endpoint with a config item.
+
+```shell
+curl -X POST localhost:8080/api/v1/configs -d "name=db.host&value=localhost"
+
+{"name":"db.host","value":"localhost","createdAt":"2021-08-31T16:26:45+07:00","updatedAt":"2021-08-31T16:26:45+07:00"}
+```
+
+```go
+package provider
+
+import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+func resourceConfig() *schema.Resource {
+	return &schema.Resource{
+		CreateContext: resourceConfigCreate,
+		ReadContext:   resourceConfigRead,
+		UpdateContext: resourceConfigUpdate,
+		DeleteContext: resourceConfigDelete,
+		Schema:        map[string]*schema.Schema{},
+	}
+}
+
+func resourceConfigCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var (
+		diags diag.Diagnostics
+		// ...
+	)
+
+	// ...
+
+	return diags
+}
+
+func resourceConfigRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var (
+		diags diag.Diagnostics
+		// ...
+	)
+	// ...
+	return diags
+}
+
+func resourceConfigUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+
+	// ...
+
+	return resourceConfigRead(ctx, d, m)
+}
+
+func resourceConfigDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var (
+		diags diag.Diagnostics
+		// ...
+	)
+
+	// ...
+
+	return diags
+}
+```
+
+Look at file provider/resource.go in the provider directory. As a general convention, Terraform providers put each
+resource in their own file, named after the resource, prefixed with `resource_`.
+
+- Define `config` schema
+
+Replace the line `Schema: map[string]*schema.Schema{}`, in your resourceOrder function with the following schema. The
+order resource schema should resemble the request body.
+
+```shell
+Schema: map[string]*schema.Schema{
+  "last_updated": {
+      Type:     schema.TypeString,
+      Optional: true,
+      Computed: true,
+  },
+  "config": {
+      Type:     schema.TypeSet,
+      Required: true,
+      Elem: &schema.Resource{
+          Schema: map[string]*schema.Schema{
+              "name": {
+                  Type:     schema.TypeString,
+                  Required: true,
+              },
+              "value": {
+                  Type:     schema.TypeString,
+                  Required: true,
+              },
+              "createdAt": {
+                  Type:     schema.TypeString,
+                  Computed: true,
+              },
+              "updatedAt": {
+                  Type:     schema.TypeString,
+                  Computed: true,
+              },
+          },
+      },
+  },
+},
+```
 
 

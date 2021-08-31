@@ -19,6 +19,9 @@ func setupHTTPHandler(server *denny.Denny) {
 	apiController.PUT("/configs", controller.UpdateConfig)
 	apiController.DELETE("/configs", controller.DeleteConfig)
 	apiController.GET("/histories", controller.GetHistory)
+	apiController.GET("/health", func(context *gin.Context) {
+		context.Status(200)
+	})
 }
 
 func main() {
